@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Backchannel</title>
+<link rel="manifest" href="manifest.json" />
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<meta name="theme-color" content="#1a1918" />
+<style>
+  :root{
+    --bg: #1a1918;
+    --surface: #242220;
+    --surface-2: #2c2925;
+    --text: #e9e5df;
+    --text-muted: #93897d;
+    --accent: #c9974c;
+    --accent-text: #1a1512;
+    --danger: #b9634f;
+    --ok: #7c9b6f;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- Setup screen ---------- */
+  #setup {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  #setup .card {
+    width: 100%;
+    max-width: 360px;
+  }
+  #setup h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  #setup p {
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 24px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin: 16px 0 6px;
+  }
+  input[type=text] {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    color: var(--text);
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 15px;
+    outline: none;
+  }
+  input[type=text]:focus { border-color: var(--accent); }
+  button {
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  #setup button {
+    margin-top: 24px;
+    width: 100%;
+    background: var(--accent);
+    color: var(--accent-text);
+    padding: 13px;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* ---------- Chat screen ---------- */
+  #chat { flex: 1; display: none; flex-direction: column; min-height: 0; }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--surface);
+    flex-shrink: 0;
+  }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex-shrink: 0; }
+  .dot.ok { background: var(--ok); }
+  .dot.waiting { background: var(--accent); }
+  .status-text { color: var(--text-muted); }
+  .status-text b { color: var(--text); font-weight: 600; }
+  header .actions { display: flex; gap: 14px; }
+  header .actions button {
+    background: none;
+    color: var(--text-muted);
+    font-size: 13px;
+    padding: 4px;
+  }
+  header .actions button:hover { color: var(--text); }
+
+  #messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .bubble {
+    max-width: 78%;
+    padding: 9px 13px;
+    line-height: 1.4;
+    font-size: 15px;
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .bubble .meta {
+    display: block;
+    font-size: 11px;
+    margin-top: 3px;
+    opacity: 0.6;
+  }
+  .bubble.me {
+    align-self: flex-end;
+    background: var(--accent);
+    color: var(--accent-text);
+    border-radius: 14px 14px 3px 14px;
+  }
+  .bubble.them {
+    align-self: flex-start;
+    background: var(--surface);
+    color: var(--text);
+    border-radius: 14px 14px 14px 3px;
+  }
+  .system-note {
+    align-self: center;
+    color: var(--text-muted);
+    font-size: 12px;
+    padding: 4px 0;
+  }
+
+  #composer {
+    display: flex;
+    gap: 10px;
+    padding: 12px;
+    border-top: 1px solid var(--surface);
+    flex-shrink: 0;
+  }
+  #composer input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--surface-2);
+    color: var(--text);
+    padding: 11px 14px;
+    border-radius: 20px;
+    font-size: 15px;
+    outline: none;
+  }
+  #composer input:focus { border-color: var(--accent); }
+  #composer button {
+    background: var(--accent);
+    color: var(--accent-text);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  #composer button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  code { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<div id="setup">
+  <div class="card">
+    <h1>Backchannel</h1>
+    <p>ye tumhare liye bnaya h bhondu</p>
+    <label for="nameInput">Your name</label>
+    <input type="text" id="nameInput" placeholder="diddyx" />
+    <label for="roomInput">Room name (share this with your friend)</label>
+    <input type="text" id="roomInput" placeholder="room code daal bauni" />
+    <button id="enterBtn">Enter</button>
+  </div>
+</div>
+
+<div id="chat">
+  <header>
+    <div class="status">
+      <span class="dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Connecting…</span>
+    </div>
+    <div class="actions">
+      <button id="exportBtn" title="Export chat">Export</button>
+      <button id="leaveBtn" title="Leave room">Leave</button>
+    </div>
+  </header>
+  <div id="messages"></div>
+  <form id="composer">
+    <input type="text" id="msgInput" placeholder="Type a message…" autocomplete="off" />
+    <button type="submit" id="sendBtn">→</button>
+  </form>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+  const setupEl = document.getElementById('setup');
+  const chatEl = document.getElementById('chat');
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
+  const messagesEl = document.getElementById('messages');
+  const composer = document.getElementById('composer');
+  const msgInput = document.getElementById('msgInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const leaveBtn = document.getElementById('leaveBtn');
+
+  let myName = localStorage.getItem('bc_name') || '';
+  let roomRaw = localStorage.getItem('bc_room') || '';
+  let roomId, peer, conn, friendName = 'Friend';
+
+  document.getElementById('nameInput').value = myName;
+  document.getElementById('roomInput').value = roomRaw;
+
+  document.getElementById('enterBtn').addEventListener('click', () => {
+    const n = document.getElementById('nameInput').value.trim();
+    const r = document.getElementById('roomInput').value.trim();
+    if (!n || !r) { alert('Fill in both fields.'); return; }
+    myName = n; roomRaw = r;
+    localStorage.setItem('bc_name', myName);
+    localStorage.setItem('bc_room', roomRaw);
+    startRoom();
+  });
+
+  leaveBtn.addEventListener('click', () => {
+    if (conn) conn.close();
+    if (peer) peer.destroy();
+    localStorage.removeItem('bc_room');
+    location.reload();
+  });
+
+  function sanitize(s){
+    return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  function setStatus(state, text){
+    statusDot.className = 'dot ' + state;
+    statusText.innerHTML = text;
+  }
+
+  function historyKey(){ return 'bc_history_' + roomId; }
+
+  function loadHistory(){
+    const raw = localStorage.getItem(historyKey());
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function saveHistory(list){
+    localStorage.setItem(historyKey(), JSON.stringify(list));
+  }
+
+  function renderBubble(msg){
+    const div = document.createElement('div');
+    if (msg.system) {
+      div.className = 'system-note';
+      div.textContent = msg.text;
+    } else {
+      div.className = 'bubble ' + (msg.from === 'me' ? 'me' : 'them');
+      const time = new Date(msg.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      div.innerHTML = escapeHtml(msg.text) + '<span class="meta">' + time + '</span>';
+    }
+    messagesEl.appendChild(div);
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function escapeHtml(s){
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function addMessage(msg, persist){
+    renderBubble(msg);
+    if (persist) {
+      const h = loadHistory();
+      h.push(msg);
+      saveHistory(h);
+    }
+  }
+
+  function startRoom(){
+    roomId = sanitize(roomRaw);
+    setupEl.style.display = 'none';
+    chatEl.style.display = 'flex';
+
+    // replay saved history for this room
+    loadHistory().forEach(m => renderBubble(m));
+
+    const p1 = 'bcv1-' + roomId + '-a';
+    const p2 = 'bcv1-' + roomId + '-b';
+
+    setStatus('waiting', 'Connecting…');
+    peer = new Peer(p1);
+
+    peer.on('open', () => {
+      setStatus('waiting', 'Waiting for your friend to join…');
+      peer.on('connection', c => { conn = c; wireConnection(); });
+    });
+
+    peer.on('error', err => {
+      if (err.type === 'unavailable-id') {
+        peer = new Peer(p2);
+        peer.on('open', () => {
+          setStatus('waiting', 'Connecting to your friend…');
+          conn = peer.connect(p1);
+          wireConnection();
+        });
+        peer.on('error', err2 => setStatus('', 'Connection error. Try Leave, then reopen the app.'));
+      } else {
+        setStatus('', 'Connection error. Check your internet and try again.');
+      }
+    });
+  }
+
+  function wireConnection(){
+    conn.on('open', () => {
+      conn.send({type: 'hello', name: myName});
+      setStatus('ok', 'Connected');
+    });
+    conn.on('data', data => {
+      if (data.type === 'hello') {
+        friendName = data.name || 'Friend';
+        setStatus('ok', 'Connected to <b>' + escapeHtml(friendName) + '</b>');
+      } else if (data.type === 'msg') {
+        addMessage({text: data.text, time: data.time, from: 'them'}, true);
+      }
+    });
+    conn.on('close', () => setStatus('', 'Your friend disconnected'));
+  }
+
+  composer.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = msgInput.value.trim();
+    if (!text) return;
+    const msg = {text, time: Date.now(), from: 'me'};
+    if (conn && conn.open) conn.send({type: 'msg', text: msg.text, time: msg.time});
+    addMessage(msg, true);
+    msgInput.value = '';
+  });
+
+  exportBtn.addEventListener('click', () => {
+    const h = loadHistory();
+    const lines = h.map(m => {
+      const who = m.from === 'me' ? myName : friendName;
+      return '[' + new Date(m.time).toLocaleString() + '] ' + who + ': ' + m.text;
+    }).join('\n');
+    const blob = new Blob([lines || 'No messages yet.'], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'backchannel-' + roomId + '-' + Date.now() + '.txt';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  });
+
+  window.addEventListener('beforeunload', () => {
+    if (conn) conn.close();
+    if (peer) peer.destroy();
+  });
+
+  if (myName && roomRaw) startRoom();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+})();
+</script>
+</body>
+</html>
