@@ -1,0 +1,13 @@
+{
+  "name": "Backchannel",
+  "short_name": "Backchannel",
+  "description": "A private, serverless line between two people.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#1a1918",
+  "theme_color": "#1a1918",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
